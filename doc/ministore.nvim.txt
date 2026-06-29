@@ -29,35 +29,66 @@ environments.
   traversal
 - Hot Installation: No restart required with `packadd` based hot-swapping
 - Intuitive UI: Floating windows with real-time fuzzy search
+- Zero-Config Bootstrap: Automatic installation and configuration
 
 ==============================================================================
 3. Installation                          *ministore.nvim-installation*
 
-Using Lazy.nvim (Recommended) ~
+Bootstrap Installation (Recommended) ~
+
+Add this code to the top of your `init.lua`:
 
 >lua
-  {
-    "your-username/ministore.nvim",
-    lazy = true,
+  -- 1. MiniStore 自举安装逻辑
+  local function bootstrap_ministore()
+    -- 延迟执行以确保 lazy.nvim 已完全完成 setup 解析与加载
+    vim.defer_fn(function()
+      local ok, lazy_config = pcall(require, "lazy.core.config")
+      if not ok then return end
+
+      -- 检查插件是否已安装
+      if lazy_config.plugins and lazy_config.plugins["ministore.nvim"] then return end
+
+      -- 动态扫描 spec 中定义的 import 模块名称
+      for _, mod_name in ipairs(lazy_config.spec.modules) do
+        -- 将模块名转换为路径格式 (sandbox_plugins -> lua/sandbox_plugins)
+        local rel_path = "lua/" .. mod_name:gsub("%.", "/")
+        local paths = vim.api.nvim_get_runtime_file(rel_path, true)
+        
+        if #paths > 0 then
+          local mod_dir = paths[1]
+          local spec_path = mod_dir .. "/ministore.lua"
+          
+          -- 如果目标文件不存在，则在该目录下生成
+          if vim.fn.filereadable(spec_path) == 0 then
+            local f = io.open(spec_path, "w")
+            if f then
+              f:write([[return {
+    "vgoah10-google/ministore.nvim",
     cmd = "MiniStore",
-    keys = {
-      { "<leader>ms", "<cmd>MiniStore<cr>", desc = "Open MiniStore" },
-    },
-  }
-<
+    keys = { { "<leader>ms", "<cmd>MiniStore<cr>", desc = "Open MiniStore" } },
+  }]])
+              f:close()
+              vim.notify("MiniStore: 已自动配置于 " .. mod_name .. "，请重启 Neovim", vim.log.levels.INFO)
+            end
+          end
+          break -- 只在第一个有效目录生成
+        end
+      end
+    end, 500)
+  end
 
-Manual Installation ~
+  -- 2. 使用 LazyDone 钩子，确保此时 spec 解析完成
+  vim.api.nvim_create_autocmd("User", {
+    pattern = "LazyDone",
+    once = true,
+    callback = bootstrap_ministore,
+  })
 
-1. Clone this repository:
->
-  git clone https://github.com/your-username/ministore.nvim.git \
-    ~/.local/share/nvim/site/pack/ministore/start/ministore.nvim
-<
-
-2. Add to your `init.lua`:
->
-  vim.keymap.set('n', '<leader>ms', require('ministore.ui').open, 
-    { desc = 'Open MiniStore' })
+  -- 3. 初始化 Lazy.nvim
+  require("lazy").setup({
+    spec = { { import = "sandbox_plugins" } },
+  })
 <
 
 ==============================================================================
@@ -73,8 +104,10 @@ Default keymaps:
 ==============================================================================
 5. Configuration                        *ministore.nvim-configuration*
 
-MiniStore.nvim works out of the box with default settings. It automatically 
-detects your Lazy plugin directory.
+On first run, the plugin automatically generates a user configuration file:
+`~/.local/share/nvim/lazy/ministore.nvim/lua/ministore_user_config.lua`
+
+You can edit this file to customize settings like `api_url` and `timeout`.
 
 ==============================================================================
 6. Testing                                   *ministore.nvim-testing*
