@@ -1,17 +1,21 @@
--- MiniStore.nvim - Asynchronous plugin manager and app store for Neovim
--- Author: Your Name
--- License: MIT
+-- plugin/ministore.lua
+-- 插件入口点：在加载时触发自举逻辑
 
-if vim.g.loaded_ministore then
+local status, bootstrap = pcall(require, "ministore.bootstrap")
+
+if not status then
+  -- 如果模块未找到，可能是加载时机问题，忽略或提示
   return
 end
 
-vim.g.loaded_ministore = true
+-- 如果自举失败（插件未安装等），则不加载后续 UI
+if not bootstrap.setup() then
+  return
+end
 
--- Define the command to open the store
+-- 自举成功，定义命令与快捷键
 vim.api.nvim_create_user_command("MiniStore", function()
   require("ministore.ui").open()
 end, {})
 
--- Set up default keymap
 vim.keymap.set('n', '<leader>ms', '<cmd>MiniStore<CR>', { desc = 'Open MiniStore' })
