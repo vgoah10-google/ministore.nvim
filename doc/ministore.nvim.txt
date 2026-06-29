@@ -1,0 +1,92 @@
+*ministore.nvim.txt*  Asynchronous plugin manager and app store for Neovim
+
+==============================================================================
+Table of Contents                         *ministore.nvim-table-of-contents*
+
+1. MiniStore.nvim                         |ministore.nvim|
+2. Features                               |ministore.nvim-features|
+3. Installation                           |ministore.nvim-installation|
+4. Usage                                  |ministore.nvim-usage|
+5. Configuration                          |ministore.nvim-configuration|
+6. Testing                                |ministore.nvim-testing|
+7. License                                |ministore.nvim-license|
+
+==============================================================================
+1. MiniStore.nvim                                        *ministore.nvim*
+
+MiniStore.nvim is a high-performance, cross-platform asynchronous plugin 
+manager and online app store for Neovim, specially designed for Windows 
+environments.
+
+==============================================================================
+2. Features                                  *ministore.nvim-features*
+
+- Asynchronous Architecture: Fully non-blocking UI thread with background 
+  retry mechanisms
+- Windows Optimized: Uses `vim.system` with Windows built-in `curl` to 
+  bypass firewall issues
+- NeovimCraft Integration: Accurate metadata retrieval using dictionary 
+  traversal
+- Hot Installation: No restart required with `packadd` based hot-swapping
+- Intuitive UI: Floating windows with real-time fuzzy search
+
+==============================================================================
+3. Installation                          *ministore.nvim-installation*
+
+Using Lazy.nvim (Recommended) ~
+
+>lua
+  {
+    "your-username/ministore.nvim",
+    lazy = true,
+    cmd = "MiniStore",
+    keys = {
+      { "<leader>ms", "<cmd>MiniStore<cr>", desc = "Open MiniStore" },
+    },
+  }
+<
+
+Manual Installation ~
+
+1. Clone this repository:
+>
+  git clone https://github.com/your-username/ministore.nvim.git \
+    ~/.local/share/nvim/site/pack/ministore/start/ministore.nvim
+<
+
+2. Add to your `init.lua`:
+>
+  vim.keymap.set('n', '<leader>ms', require('ministore.ui').open, 
+    { desc = 'Open MiniStore' })
+<
+
+==============================================================================
+4. Usage                                     *ministore.nvim-usage*
+
+Default keymaps:
+- `<leader>ms` - Open the plugin store
+- `<CR>` - Select a plugin for installation
+- `d` - Mark a plugin for removal
+- `<C-j>/<C-k>` - Navigate through plugins
+- `<Esc>` - Confirm actions and close the store
+
+==============================================================================
+5. Configuration                        *ministore.nvim-configuration*
+
+MiniStore.nvim works out of the box with default settings. It automatically 
+detects your Lazy plugin directory.
+
+==============================================================================
+6. Testing                                   *ministore.nvim-testing*
+
+Run the integrated test suite:
+>
+  :lua require('ministore.test').run_test()
+<
+
+==============================================================================
+7. License                                   *ministore.nvim-license*
+
+MIT License
+
+vim:tw=78:ts=8:noet:ft=help:norl:
