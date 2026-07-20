@@ -43,4 +43,27 @@ function M.manual_update()
   end)
 end
 
+-- 兼容旧接口
+function M.fetch_plugins(callback)
+  local db = M.load_db()
+  if db then 
+    callback(db)
+  else
+    -- 如果缓存为空，则强制下载
+    M.manual_update_and_load(callback)
+  end
+end
+
+-- 辅助函数：手动更新并回调
+function M.manual_update_and_load(callback)
+    vim.system({"curl", "-sL", config.store_api, "-o", CACHE_PATH}, {}, function(res)
+        if res.code == 0 then
+            vim.schedule(function() 
+                callback(M.load_db())
+                vim.notify("MiniStore: 数据库已初始化。", vim.log.levels.INFO)
+            end)
+        end
+    end)
+end
+
 return M
