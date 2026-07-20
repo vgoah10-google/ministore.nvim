@@ -137,6 +137,17 @@ function M.open()
     -- D. 绑定交互快捷键
     local opts = { buffer = ui.input_buf, silent = true }
 
+    -- 强制刷新
+    vim.keymap.set({ "i", "n" }, "<C-r>", function()
+      vim.notify("MiniStore: 正在强制刷新数据库...", vim.log.levels.INFO)
+      if api.download_db_sync() then
+        local new_db = api.load_db()
+        filtered_plugins = vim.deepcopy(new_db)
+        render_list()
+        vim.notify("MiniStore: 刷新完成！", vim.log.levels.INFO)
+      end
+    end, opts)
+
     -- 添加高亮命名空间
     local highlight_ns = vim.api.nvim_create_namespace("ministore_highlight")
 
