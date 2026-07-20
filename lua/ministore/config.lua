@@ -93,4 +93,8 @@ local raw_api = "https://githubusercontent.com"
 -- 【核心优化】由于国内或部分网络访问 GitHub Raw 极慢且易断，这里默认挂载了高速加速镜像
 M.store_api = "https://ghproxy.com/" .. raw_api
 
+-- 【更新机制配置】
+M.auto_update_db = true
+M.timeout = 5000
+
 return M
