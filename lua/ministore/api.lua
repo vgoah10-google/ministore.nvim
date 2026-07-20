@@ -65,8 +65,10 @@ end
 
 -- 辅助函数：手动更新并回调
 function M.manual_update_and_load(callback)
-    print("MiniStore Debug: 开始调用 curl 下载数据...")
-    vim.system({"curl", "-sL", config.store_api}, {}, function(res)
+    local cmd = {"curl", "-sL", config.store_api}
+    print("MiniStore Debug: 执行命令: " .. table.concat(cmd, " "))
+    
+    vim.system(cmd, {}, function(res)
         if res.code == 0 then
             print("MiniStore Debug: curl 下载成功，大小: " .. #res.stdout .. " bytes")
             -- 将数据直接写入文件以供 load_db 读取
@@ -80,17 +82,13 @@ function M.manual_update_and_load(callback)
                 local db = M.load_db()
                 if db then
                     callback(db)
-                    vim.notify("MiniStore: 数据库已初始化。", vim.log.levels.INFO)
+                    -- 去掉这里的 vim.notify 如果你不想要提示
                 else
                     print("MiniStore Error: JSON 解析失败。数据样本: " .. res.stdout:sub(1, 100))
-                    vim.notify("MiniStore: 数据解析失败，请查看 :messages", vim.log.levels.ERROR)
                 end
             end)
         else
-            print("MiniStore Error: curl 下载失败，代码: " .. res.code .. " 错误: " .. res.stderr)
-            vim.schedule(function()
-                vim.notify("MiniStore: 数据库下载失败，请检查网络。", vim.log.levels.ERROR)
-            end)
+            print("MiniStore Error: curl 下载失败，代码: " .. res.code .. " 错误: " .. (res.stderr or "none"))
         end
     end)
 end
