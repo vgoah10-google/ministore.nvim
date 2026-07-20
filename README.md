@@ -4,30 +4,30 @@ A high-performance, cross-platform asynchronous plugin manager for Neovim, speci
 
 ## 🚀 自举式安装 (Bootstrap Installation)
 
-将以下代码添加到您的 `init.lua` 顶部，实现真正的零配置安装。该脚本会自动检测 Lazy.nvim 的配置目录并注入插件配置：
+将以下代码添加到您的 `init.lua` 顶部，实现真正的零配置安装。该脚本会自动检测 Lazy.nvim 环境，并在后台静默完成安装，无需重启 Neovim 即可使用：
 
 ```lua
 -- 1. MiniStore 自举安装逻辑
 local function bootstrap_ministore()
-  -- 延迟执行以确保 lazy.nvim 已完全完成 setup 解析与加载
   vim.defer_fn(function()
-    local ok, lazy_config = pcall(require, "lazy.core.config")
+    local ok, lazy = pcall(require, "lazy")
     if not ok then return end
-
+    
+    local config = require("lazy.core.config")
     -- 检查插件是否已安装
-    if lazy_config.plugins and lazy_config.plugins["ministore.nvim"] then return end
+    if config.plugins and config.plugins["ministore.nvim"] then return end
 
-    -- 动态扫描 spec 中定义的 import 模块名称
-    for _, mod_name in ipairs(lazy_config.spec.modules) do
-      -- 将模块名转换为路径格式 (sandbox_plugins -> lua/sandbox_plugins)
+    -- 后台静默安装
+    lazy.install({
+      { "vgoah10-google/ministore.nvim", show = false }
+    })
+    
+    -- 动态生成配置，确保持久化
+    for _, mod_name in ipairs(config.spec.modules) do
       local rel_path = "lua/" .. mod_name:gsub("%.", "/")
       local paths = vim.api.nvim_get_runtime_file(rel_path, true)
-      
       if #paths > 0 then
-        local mod_dir = paths[1]
-        local spec_path = mod_dir .. "/ministore.lua"
-        
-        -- 如果目标文件不存在，则在该目录下生成
+        local spec_path = paths[1] .. "/ministore.lua"
         if vim.fn.filereadable(spec_path) == 0 then
           local f = io.open(spec_path, "w")
           if f then
@@ -37,16 +37,16 @@ local function bootstrap_ministore()
   keys = { { "<leader>ms", "<cmd>MiniStore<cr>", desc = "Open MiniStore" } },
 }]])
             f:close()
-            vim.notify("MiniStore: 已自动配置于 " .. mod_name .. "，请重启 Neovim", vim.log.levels.INFO)
+            vim.notify("MiniStore: 自动安装完成，配置已生成", vim.log.levels.INFO)
           end
         end
-        break -- 只在第一个有效目录生成
+        break
       end
     end
   end, 500)
 end
 
--- 2. 使用 LazyDone 钩子，确保此时 spec 解析完成
+-- 2. 使用 LazyDone 钩子确保环境就绪
 vim.api.nvim_create_autocmd("User", {
   pattern = "LazyDone",
   once = true,
@@ -61,10 +61,10 @@ require("lazy").setup({
 
 ## ✨ 特性
 
-- **零配置安装**：通过 Lazy API 自动检测 import 路径并注入配置，无需手动介入。
+- **零配置安装**：通过 Lazy API 自动检测 import 路径并注入配置。
+- **即装即用**：利用 `{ show = false }` 实现静默安装，无需重启 Neovim。
 - **动态路径探测**：利用 Neovim 运行时 API 动态定位模块物理路径，兼容任何目录名。
-- **自动管理**：生成标准的 Lua 配置后，由 Lazy.nvim 接管后续的安装与更新。
-- **高性能**：延迟加载逻辑与 `LazyDone` 事件驱动，不阻塞 Neovim 的启动过程。
+- **高性能**：延迟加载逻辑与 `LazyDone` 事件驱动，不阻塞启动过程。
 
 ## 📖 使用方法
 
