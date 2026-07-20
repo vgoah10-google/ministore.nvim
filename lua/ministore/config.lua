@@ -91,7 +91,8 @@ M.lazy_plugin_dir = M.get_lazy_plugin_dir()
 local raw_api = "https://githubusercontent.com"
 
 -- 【核心优化】由于国内或部分网络访问 GitHub Raw 极慢且易断，这里默认挂载了高速加速镜像
-M.store_api = "https://ghproxy.com/" .. raw_api
+-- 注意：ghproxy 镜像规则是将完整 URL 拼接在后方
+M.store_api = "https://ghproxy.com/https://raw.githubusercontent.com/vgoah10-google/ministore.nvim/main/plugins.json"
 
 -- 【更新机制配置】
 M.auto_update_db = true
