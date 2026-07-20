@@ -43,6 +43,18 @@ function M.manual_update()
   end)
 end
 
+-- 补全旧接口
+function M.get_installed_plugins()
+  local plugins = {}
+  local ok, lazy_core = pcall(require, "lazy.core.config")
+  if ok and lazy_core.plugins then
+    for name, _ in pairs(lazy_core.plugins) do
+      plugins[name] = true
+    end
+  end
+  return plugins
+end
+
 -- 兼容旧接口
 function M.fetch_plugins(callback)
   local db = M.load_db()
