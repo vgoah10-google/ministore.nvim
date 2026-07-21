@@ -1,6 +1,7 @@
 local M = {}
 local config = require("ministore.config")
 local CACHE_PATH = vim.fn.stdpath("cache") .. "/ministore_db.json"
+print("MiniStore Debug: Cache path is: " .. CACHE_PATH)
 
 -- 获取已安装插件列表 (保持不变)
 function M.get_installed_plugins()
@@ -18,8 +19,19 @@ end
 function M.load_db()
   if vim.fn.filereadable(CACHE_PATH) == 1 then
     local content = vim.fn.readfile(CACHE_PATH)
-    local ok, db = pcall(vim.json.decode, table.concat(content, ""))
-    if ok then return db end
+    local ok, raw_db = pcall(vim.json.decode, table.concat(content, ""))
+    if ok and raw_db and raw_db.plugins then
+      local plugins_array = {}
+      for _, p in pairs(raw_db.plugins) do
+        table.insert(plugins_array, {
+          name = p.name or "unknown",
+          repo = p.id or "",
+          stars = p.stars or 0,
+          desc = p.description or p.desc or ""
+        })
+      end
+      return plugins_array
+    end
   end
   return nil
 end
