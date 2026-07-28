@@ -27,12 +27,18 @@ function M.load_db()
     if ok and raw_db and raw_db.plugins then
       local plugins_array = {}
       for _, p in pairs(raw_db.plugins) do
-        table.insert(plugins_array, {
-          name = p.name or "unknown",
-          repo = p.id or "",
-          stars = p.stars or 0,
-          desc = p.description or p.desc or ""
-        })
+        if type(p) == "table" then
+          local name = type(p.name) == "string" and p.name or (type(p.id) == "string" and p.id or "unknown")
+          local repo = type(p.id) == "string" and p.id or (type(p.repo) == "string" and p.repo or "")
+          local desc = type(p.description) == "string" and p.description or (type(p.desc) == "string" and p.desc or "")
+          local stars = tonumber(p.stars) or 0
+          table.insert(plugins_array, {
+            name = name,
+            repo = repo,
+            stars = stars,
+            desc = desc
+          })
+        end
       end
       cached_plugins = plugins_array -- 更新私有缓存
       return plugins_array
@@ -45,9 +51,14 @@ function M.get_all_plugins()
   return cached_plugins or M.load_db() or {}
 end
 
+-- 刷新缓存并更新数据
 function M.refresh_cache()
-    cached_plugins = M.load_db()
-    return cached_plugins
+    -- 强制触发下载
+    if M.download_db_sync() then
+        cached_plugins = M.load_db()
+        return cached_plugins
+    end
+    return nil
 end
 
 -- 安装插件逻辑 (复用 Lazy Spec 动态发现逻辑)

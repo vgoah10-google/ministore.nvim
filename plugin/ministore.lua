@@ -13,4 +13,8 @@ vim.api.nvim_create_user_command("MiniStore", function()
   require("ministore.ui").open()
 end, {})
 
+vim.api.nvim_create_user_command("MiniStoreTest", function()
+  require("ministore.tests.test_filter").run_all_tests()
+end, { desc = "运行 MiniStore 过滤函数测试套件" })
+
 vim.keymap.set('n', '<leader>ms', '<cmd>MiniStore<CR>', { desc = 'Open MiniStore' })
