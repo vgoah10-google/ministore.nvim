@@ -70,4 +70,24 @@ function M.run_test()
   end, 3000)
 end
 
+function M.run_unit_tests()
+  vim.notify("🛠️ 启动 MiniStore 单元测试...", vim.log.levels.INFO)
+  
+  -- 1. 过滤逻辑测试
+  local filter_test = require("ministore.tests.test_filter")
+  if filter_test.run_all_tests then 
+    local ok, err = pcall(filter_test.run_all_tests)
+    if not ok then vim.notify("❌ 过滤测试失败: " .. tostring(err), vim.log.levels.ERROR) end
+  end
+
+  -- 2. 排序稳定性测试 (针对 E5108 Bug)
+  local sort_test = require("ministore.tests.test_sort")
+  if sort_test.test_sort then
+    local ok, err = pcall(sort_test.test_sort)
+    if not ok then vim.notify("❌ 排序测试失败: " .. tostring(err), vim.log.levels.ERROR) end
+  end
+  
+  vim.notify("🏁 所有单元测试执行完毕", vim.log.levels.INFO)
+end
+
 return M

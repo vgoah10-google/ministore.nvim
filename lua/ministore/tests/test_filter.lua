@@ -113,9 +113,12 @@ local function assert_eq(actual, expected, test_name)
 end
 
 local function assert_contains(plugins, expected_name, test_name)
-  if contains_plugin(plugins, expected_name) then
+  local matched = contains_plugin(plugins, expected_name)
+  if matched then
     test_pass = test_pass + 1
-    table.insert(test_results, { ok = true, name = test_name })
+    local names = {}
+    for _, p in ipairs(plugins) do table.insert(names, p.name or "?") end
+    table.insert(test_results, { ok = true, name = test_name, detail = "匹配成功, 结果集: {" .. table.concat(names, ", ") .. "}" })
   else
     test_fail = test_fail + 1
     local names = {}
@@ -134,6 +137,8 @@ local function assert_not_contains(plugins, expected_name, test_name)
     table.insert(test_results, { ok = true, name = test_name })
   else
     test_fail = test_fail + 1
+    local names = {}
+    for _, p in ipairs(plugins) do table.insert(names, p.name or "?") end
     table.insert(test_results, {
       ok = false,
       name = test_name,
@@ -146,13 +151,17 @@ local function assert_count(plugins, expected_count, test_name)
   local actual_count = #plugins
   if actual_count == expected_count then
     test_pass = test_pass + 1
-    table.insert(test_results, { ok = true, name = test_name })
+    local names = {}
+    for _, p in ipairs(plugins) do table.insert(names, p.name or "?") end
+    table.insert(test_results, { ok = true, name = test_name, detail = "数量匹配, 结果集: {" .. table.concat(names, ", ") .. "}" })
   else
     test_fail = test_fail + 1
+    local names = {}
+    for _, p in ipairs(plugins) do table.insert(names, p.name or "?") end
     table.insert(test_results, {
       ok = false,
       name = test_name,
-      detail = string.format("期望 %d 个结果, 实际 %d 个", expected_count, actual_count)
+      detail = string.format("期望 %d 个结果, 实际 %d 个: {%s}", expected_count, actual_count, table.concat(names, ","))
     })
   end
 end
@@ -192,18 +201,11 @@ local function run_all_tests()
 
   -- ---- 多关键词 AND 匹配 ----
   local r = ui.filter_plugins("nvim lsp", plugins)
-  -- nvim-lspconfig: 包含 'nvim' (name/repo) + 'lsp' (name/repo) ✓
-  -- lsp-zero.nvim:  包含 'nvim' (desc) + 'lsp' (name/repo) ✓
   assert_count(r, 2, "[多关键词] 'nvim lsp' 匹配 lsp-zero 和 nvim-lspconfig (AND语义)")
   assert_contains(r, "lsp-zero.nvim", "[多关键词] 'nvim lsp' 包含 lsp-zero")
   assert_contains(r, "nvim-lspconfig", "[多关键词] 'nvim lsp' 包含 nvim-lspconfig")
   
   local r2 = ui.filter_plugins("telescope fuzzy", plugins)
-  -- telescope in name, fuzzy in desc of nvim-ufo? No.
-  -- telescope in name of telescope.nvim, fuzzy in desc of telescope.nvim ("Filter, Preview, Pick. All lua, blazingly fast.") -> fuzzy not there
-  -- Wait, telescope.nvim desc is "Find, Filter, Preview, Pick. All lua, blazingly fast." - no "fuzzy"!
-  -- But nvim-ufo desc IS "Ultra Fast Fuzzy Finder for Neovim" - "fuzzy" is there, and "telescope" is NOT.
-  -- So r2 should be 0
   assert_count(r2, 0, "[多关键词] 'telescope fuzzy' 无匹配 (AND语义)")
   
   local r3 = ui.filter_plugins("telescope preview", plugins)
@@ -254,15 +256,10 @@ local function run_all_tests()
   assert_eq(plugins[1].name, original_first_name, "[不可变] 过滤操作不修改原列表顺序")
   
   -- ---- Lua 模式字符处理 (% . + * 等) ----
-  -- 注意：'plain=true' 使 find() 将模式字符当作字面量
-  -- 但查询仍需是子串！如 'nvim%ufo' 不包含在 'nvim-ufo' 中
   assert_not_contains(ui.filter_plugins("nvim%ufo", plugins), "nvim-ufo", "[模式字符] 'nvim%ufo' 不是 'nvim-ufo' 的子串")
-  -- 但如果查询字符串真的在插件中，应该能匹配
   assert_contains(ui.filter_plugins("nvim", plugins), "nvim-ufo", "[模式字符] 'nvim' 字面量匹配")
-  -- 点字符 '.' 作为子串匹配：所有名字中有 '.' 的插件
   assert_contains(ui.filter_plugins(".", plugins), "telescope.nvim", "[模式字符] '.' 作为字面量在 telescope.nvim 中")
   assert_contains(ui.filter_plugins(".", plugins), "lsp-zero.nvim", "[模式字符] '.' 作为字面量在 lsp-zero.nvim 中")
-  -- nvim-ufo 没有点
   assert_not_contains(ui.filter_plugins(".", plugins), "nvim-ufo", "[模式字符] '.' 不在 nvim-ufo 中")
   
   -- ---- 空 name 条目不崩溃 ----
@@ -275,15 +272,14 @@ local function run_all_tests()
   print(string.rep("═", 70))
   for _, r in ipairs(test_results) do
     if r.ok then
-      print(string.format("  \27[32m✓\27[0m %s", r.name))
+      print(string.format("  [✓] %s\n      %s", r.name, r.detail or ""))
     else
-      print(string.format("  \27[31m✗\27[0m %s", r.name))
-      if r.detail then print("      " .. r.detail) end
+      print(string.format("  [✗] %s\n      %s", r.name, r.detail or ""))
     end
   end
   print(string.rep("─", 70))
   local total = test_pass + test_fail
-  print(string.format("  总计: %d 个测试 | \27[32m通过: %d\27[0m | \27[31m失败: %d\27[0m",
+  print(string.format("  总计: %d 个测试 | 通过: %d | 失败: %d",
     total, test_pass, test_fail))
   print(string.rep("═", 70) .. "\n")
   

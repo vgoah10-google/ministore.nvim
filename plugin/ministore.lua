@@ -16,17 +16,17 @@ local function define_commands()
   end, { desc = "打开 MiniStore 插件管理 UI" })
 
   vim.api.nvim_create_user_command("MiniStoreTest", function()
-    local ok, mod = pcall(require, "ministore.tests.test_filter")
+    local ok, mod = pcall(require, "ministore.test")
     if not ok then
       vim.notify("MiniStoreTest: 无法加载测试模块: " .. tostring(mod), vim.log.levels.ERROR)
       return
     end
-    if type(mod.run_all_tests) ~= "function" then
-      vim.notify("MiniStoreTest: 测试模块损坏，找不到 run_all_tests 函数", vim.log.levels.ERROR)
+    if type(mod.run_unit_tests) ~= "function" then
+      vim.notify("MiniStoreTest: 测试模块损坏，找不到 run_unit_tests 函数", vim.log.levels.ERROR)
       return
     end
-    mod.run_all_tests()
-  end, { desc = "运行 MiniStore 过滤函数测试套件" })
+    mod.run_unit_tests()
+  end, { desc = "运行 MiniStore 全量单元测试 (过滤+排序)" })
 end
 
 define_commands()
