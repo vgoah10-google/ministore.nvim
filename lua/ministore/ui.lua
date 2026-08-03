@@ -327,7 +327,8 @@ function M.open()
           filter_plugins()
         end, opts)
 
-        vim.keymap.set({ "i", "n" }, "<CR>", function() M.actions.install_selected() end, opts)
+        vim.keymap.set({ "i", "n" }, "<C-CR>", function() M.actions.install_selected() end, opts)
+        vim.keymap.set({ "i", "n" }, "<C-u>", function() M.actions.remove_selected() end, opts)
         vim.keymap.set({ "i", "n" }, "<Del>", function() M.actions.remove_selected() end, opts)
         vim.keymap.set({ "i", "n" }, "x", function() M.actions.remove_selected() end, opts)
 
